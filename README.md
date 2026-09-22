@@ -3,6 +3,8 @@
 Use Jev (and optionally an image understanding model) to moderate chats across many messaging platforms, such as Discord, Slack and Telegram. Built with Bun, Chat SDK and AI SDK.
 This project is packaged as a library so that you can provide your own Chat SDK adapters and AI SDK providers.
 
+![Discord demo](assets/discord.gif)
+
 ## Quick start
 
 Requires Bun to be installed.
