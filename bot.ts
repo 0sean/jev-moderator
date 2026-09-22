@@ -21,8 +21,8 @@ export function createBot(config: Config) {
     const state = bot.getState();
 
     bot.onNewMessage(/(.*?)/, (thread, message) => handleMessage(thread, message, state, config.threshold, config.admins, config.evaluationModel, config.imageModel));
-    bot.onSlashCommand("/allow", (event) => handleAllow(event, state));
-    bot.onSlashCommand("/disallow", (event) => handleDisallow(event, state));
+    bot.onSlashCommand("/allow", (event) => handleAllow(event, state, config.admins));
+    bot.onSlashCommand("/disallow", (event) => handleDisallow(event, state, config.admins));
 
     return bot;
 }
@@ -91,12 +91,18 @@ async function getAttachment(attachment: Attachment) {
     return null;
 }
 
-async function handleAllow(event: SlashCommandEvent, state: StateAdapter) {
+async function handleAllow(event: SlashCommandEvent, state: StateAdapter, admins: string[] = []) {
+    const user = `${event.adapter.name}:${event.text}`;
+    if(!admins.includes(user) && admins.length !== 0) return await event.channel.post("❌ You do not have permission to run this command.");
+
     await state.appendToList("jev-allowed", `${event.adapter.name}:${event.text}`);
     await event.channel.post("✅ User allowed");
 }
 
-async function handleDisallow(event: SlashCommandEvent, state: StateAdapter) {
+async function handleDisallow(event: SlashCommandEvent, state: StateAdapter, admins: string[] = []) {
+    const user = `${event.adapter.name}:${event.text}`;
+    if(!admins.includes(user) && admins.length !== 0) return await event.channel.post("❌ You do not have permission to run this command.");
+
     const allowed = await state.getList("jev-allowed");
     await state.set("jev-allowed", allowed.filter(l => l !== `${event.adapter.name}:${event.text}`));
     await event.channel.post("✅ User disallowed");
