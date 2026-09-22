@@ -3,8 +3,8 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "^1.4.2",
-    "@chat-adapter/discord": "^4.41.0"
+    "@chat-adapter/discord": "^4.41.0",
+    "@types/bun": "^1.4.2"
   },
   "peerDependencies": {
     "typescript": "^5"
