@@ -1,6 +1,6 @@
 import { createMemoryState } from "@chat-adapter/state-memory";
 import { Chat, Message, type Attachment, type ChatConfig, type SlashCommandEvent, type StateAdapter, type Thread } from "chat";
-import { experimental_evaluate as evaluate, generateText, Output, type Experimental_EvaluationModel as EvaluationModel, type LanguageModel } from "ai";
+import { experimental_decide as decide, generateText, Output, type Experimental_DecisionModel as DecisionModel, type LanguageModel } from "ai";
 
 export type Config =
     Omit<ChatConfig, "userName" | "state"> &
@@ -8,7 +8,7 @@ export type Config =
     {
         threshold?: number;
         admins?: string[];
-        evaluationModel?: EvaluationModel;
+        decisionModel?: DecisionModel;
         imageModel?: LanguageModel;
     };
 
@@ -34,7 +34,7 @@ async function handleMessage(thread: Thread, message: Message, state: StateAdapt
     const allowed = await state.getList("jev-allowed");
     if(allowed.includes(user)) return;
 
-    const result = await evaluate({
+    const result = await decide({
         model: evaluationModel || "typesafe-ai/jev",
         state: {
             message: message.text

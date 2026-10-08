@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@chat-adapter/state-memory": "^4.41.0",
-    "ai": "^7.0.107",
+    "ai": "^7.0.133",
     "chat": "^4.41.0"
   }
 }
