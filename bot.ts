@@ -1,6 +1,6 @@
 import { createMemoryState } from "@chat-adapter/state-memory";
 import { Chat, Message, type Attachment, type ChatConfig, type SlashCommandEvent, type StateAdapter, type Thread } from "chat";
-import { experimental_decide as decide, generateText, Output, type Experimental_DecisionModel as DecisionModel, type LanguageModel } from "ai";
+import { experimental_decide as decide, type Experimental_DecisionModel as DecisionModel } from "ai";
 
 export type Config =
     Omit<ChatConfig, "userName" | "state"> &
@@ -9,7 +9,7 @@ export type Config =
         threshold?: number;
         admins?: string[];
         decisionModel?: DecisionModel;
-        imageModel?: LanguageModel;
+        imageModel?: DecisionModel;
     };
 
 export function createBot(config: Config) {
@@ -20,14 +20,14 @@ export function createBot(config: Config) {
     });
     const state = bot.getState();
 
-    bot.onNewMessage(/(.*?)/, (thread, message) => handleMessage(thread, message, state, config.threshold, config.admins, config.evaluationModel, config.imageModel));
+    bot.onNewMessage(/(.*?)/, (thread, message) => handleMessage(thread, message, state, config.threshold, config.admins, config.decisionModel, config.imageModel));
     bot.onSlashCommand("/allow", (event) => void handleAllow(event, state, config.admins));
     bot.onSlashCommand("/disallow", (event) => void handleDisallow(event, state, config.admins));
 
     return bot;
 }
 
-async function handleMessage(thread: Thread, message: Message, state: StateAdapter, threshold: number = 2, admins: string[] = [], evaluationModel?: EvaluationModel, imageModel?: LanguageModel) {
+async function handleMessage(thread: Thread, message: Message, state: StateAdapter, threshold: number = 2, admins: string[] = [], decisionModel?: DecisionModel, imageModel?: DecisionModel) {
     const user = `${thread.adapter.name}:${message.author.userId}`;
     if(admins.includes(user)) return;
 
@@ -35,7 +35,7 @@ async function handleMessage(thread: Thread, message: Message, state: StateAdapt
     if(allowed.includes(user)) return;
 
     const result = await decide({
-        model: evaluationModel || "typesafe-ai/jev",
+        model: decisionModel || "typesafe-ai/jev",
         state: {
             message: message.text
         },
@@ -56,26 +56,30 @@ async function handleMessage(thread: Thread, message: Message, state: StateAdapt
 
     if(score >= threshold) return await thread.adapter.deleteMessage(thread.id, message.id);
 
-    if(message.attachments.filter(a => a.mimeType?.startsWith("image/")).length > 0 && imageModel) {
+    const imageAttachments = message.attachments.filter(a => a.mimeType?.startsWith("image/"));
+    if(imageAttachments.length > 0 && imageModel) {
         try {
-            const { output } = await generateText({
+            const { answers } = await decide({
                 model: imageModel,
-                instructions: "You will be provided with message attachments. Your task is to check if the attached content is inappropriate, malicious or abusive.",
-                output: Output.choice({
-                    options: ['appropriate', 'inappropriate']
-                }),
-                messages: [{
-                    role: "user",
-                    content: await Promise.all(message.attachments.filter(a => a.mimeType?.startsWith("image/")).map(async (a) => {
-                        const data = await getAttachment(a);
-                        if(!data) throw new Error("Couldn't fetch image");
-    
-                        return { type: "file" as const, mediaType: "image", data }
-                    }))
-                }]
+                state: await Promise.all(imageAttachments.map(async (attachment) => {
+                    const data = await getAttachment(attachment);
+                    if(!data) throw new Error("Couldn't fetch image");
+
+                    return { type: "file" as const, mediaType: attachment.mimeType!, data }
+                })),
+                questions: {
+                    moderationDecision: {
+                        type: "choice",
+                        instructions: "You will be provided with message attachments. Your task is to check if the attached content is inappropriate, malicious or abusive.",
+                        criteria: {
+                            appropriate: "All attached images are appropriate, with no malicious or abusive content.",
+                            inappropriate: "At least one attached image is inappropriate, malicious or abusive."
+                        }
+                    }
+                }
             });
     
-            if(output === "inappropriate") await thread.adapter.deleteMessage(thread.id, message.id);
+            if(answers.moderationDecision.choice === "inappropriate") await thread.adapter.deleteMessage(thread.id, message.id);
         } catch (error) {
             console.warn(`Attachments in message ${thread.adapter.name}:${message.id} could not be scanned. This could be from model refusal or an unrelated API error.`);
             console.error(error);
@@ -85,7 +89,7 @@ async function handleMessage(thread: Thread, message: Message, state: StateAdapt
 }
 
 async function getAttachment(attachment: Attachment) {
-    if(attachment.url) return attachment.url;
+    if(attachment.url) return new URL(attachment.url);
     if(attachment.data) return attachment.data instanceof Blob ? attachment.data.arrayBuffer() : attachment.data;
     if(attachment.fetchData) return await attachment.fetchData();
     return null;

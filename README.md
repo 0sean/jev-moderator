@@ -1,6 +1,6 @@
 # jev-moderator
 
-Use Jev (and optionally an image understanding model) to moderate chats across many messaging platforms, such as Discord, Slack and Telegram. Built with Bun, Chat SDK and AI SDK.
+Use decision models like Jev to moderate chats across many messaging platforms, such as Discord, Slack and Telegram. Built with Bun, Chat SDK and AI SDK.
 This project is packaged as a library so that you can provide your own Chat SDK adapters and AI SDK providers.
 
 ![Discord demo](assets/discord.gif)
@@ -93,5 +93,5 @@ The bot registers `/allow` and `/disallow` slash commands to add or remove a use
 | --- | --- | --- |
 | `threshold` | `number` | The score at which messages are deleted. |
 | `admins` | `string[]` | A list of user IDs to bypass moderation for and allow running slash commands, in the format `provider:user_id`. |
-| `evaluationModel` | [`EvaluationModel`](https://ai-sdk.dev/docs/ai-sdk-core/evaluation#provider-models) | Swap Jev for any other evaluation model (which currently is just LLMs with structured outputs) |
-| `imageModel` | [`LanguageModel`](https://ai-sdk.dev/providers/ai-sdk-providers) | Provide an LLM with image understanding to use to scan image attachments with. |
+| `decisionModel` | [`Experimental_DecisionModel`](https://ai-sdk.dev/docs/ai-sdk-core/decisions#provider-models) | Swap Jev for another decision model for text moderation. |
+| `imageModel` | [`Experimental_DecisionModel`](https://ai-sdk.dev/docs/ai-sdk-core/decisions#multimodal-state) | Provide a decision model with image support (e.g. OpenAI) to scan image attachments. Use a provider's `decisionModel` factory; |
