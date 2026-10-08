@@ -51,9 +51,10 @@ Requires Bun to be installed.
    DISCORD_BOT_TOKEN=your_bot_token
    DISCORD_PUBLIC_KEY=your_application_public_key
    DISCORD_APPLICATION_ID=your_application_id
+   # And for your AI providers (defaults to Vercel AI Gateway)
+   AI_GATEWAY_API_KEY=your_ai_gateway_key
    # Required regardless of adapters
    PUBLIC_URL=https://your-public-host.example
-   AI_GATEWAY_API_KEY=your_ai_gateway_key
    ```
 
    [View all adapters](https://chat-sdk.dev/adapters)
