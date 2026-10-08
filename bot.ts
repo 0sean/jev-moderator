@@ -21,8 +21,8 @@ export function createBot(config: Config) {
     const state = bot.getState();
 
     bot.onNewMessage(/(.*?)/, (thread, message) => handleMessage(thread, message, state, config.threshold, config.admins, config.evaluationModel, config.imageModel));
-    bot.onSlashCommand("/allow", (event) => handleAllow(event, state, config.admins));
-    bot.onSlashCommand("/disallow", (event) => handleDisallow(event, state, config.admins));
+    bot.onSlashCommand("/allow", (event) => void handleAllow(event, state, config.admins));
+    bot.onSlashCommand("/disallow", (event) => void handleDisallow(event, state, config.admins));
 
     return bot;
 }
